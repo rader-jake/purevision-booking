@@ -1,0 +1,234 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0a0a0a;
+  color: #f0f0f0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.checkered-bg {
+  position: relative;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.015) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.015) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.015) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.015) 75%);
+  background-size: 40px 40px;
+  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+  isolation: isolate;
+}
+
+/* ─── AMBIENT BACKGROUND GLOW ──────────────────────────────────────────── */
+.ambient-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.5s ease forwards;
+}
+
+.animate-fade-up-delay-1 {
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+
+.animate-fade-up-delay-2 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.animate-fade-up-delay-3 {
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+
+.animate-fade-up-delay-4 {
+  animation-delay: 0.4s;
+  opacity: 0;
+}
+
+.slot-btn {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slot-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-2px);
+}
+
+.slot-btn.selected {
+  background: white !important;
+  color: #0a0a0a !important;
+  border-color: white !important;
+  font-weight: 600;
+  box-shadow: 0 8px 24px -8px rgba(255, 255, 255, 0.35);
+}
+
+.date-card {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.date-card:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-2px);
+}
+
+.date-card.selected {
+  background: white !important;
+  color: #0a0a0a !important;
+  border-color: white !important;
+  box-shadow: 0 8px 24px -8px rgba(255, 255, 255, 0.35);
+}
+
+.date-card.selected .date-day-name,
+.date-card.selected .date-day-num,
+.date-card.selected .date-month {
+  color: #0a0a0a !important;
+}
+
+.booking-input {
+  width: 100%;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: #f0f0f0;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.booking-input:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.booking-input:focus {
+  border-color: rgba(201, 163, 95, 0.6);
+  box-shadow: 0 0 0 3px rgba(201, 163, 95, 0.12);
+  background: #171717;
+}
+
+.booking-input::placeholder {
+  color: #555;
+}
+
+.booking-select {
+  width: 100%;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: #f0f0f0;
+  font-size: 15px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+
+.booking-select:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.booking-select:focus {
+  border-color: rgba(201, 163, 95, 0.6);
+  box-shadow: 0 0 0 3px rgba(201, 163, 95, 0.12);
+  background-color: #171717;
+}
+
+/* ─── PRIMARY BUTTON SHEEN ─────────────────────────────────────────────── */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(10, 10, 10, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-shine:hover::before {
+  left: 125%;
+}
+
+/* ─── LOADING SKELETON ─────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.09) 37%,
+    rgba(255, 255, 255, 0.04) 63%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(3%, -4%) scale(1.08); }
+  66% { transform: translate(-2%, 3%) scale(0.96); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

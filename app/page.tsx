@@ -1,8 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 
 const API = 'https://purevision-backend-production.up.railway.app'
+const PHONE_DISPLAY = '(832) 512-3301'
+const PHONE_TEL = '+18325123301'
+const GOOGLE_REVIEWS_URL = 'https://www.google.com/maps/place/PureVision+Tint/@30.0112867,-95.8206073,17z/data=!3m1!4b1!4m6!3m5!1s0x8640bf5c19b5ade3:0xe489391c99bff018!8m2!3d30.0112867!4d-95.8206073!16s%2Fg%2F11x2x2lqzf'
+const GOOGLE_RATING = 4.9
+const GOOGLE_REVIEW_COUNT = 126
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 type Step = 'service' | 'date' | 'info' | 'confirm' | 'done'
@@ -23,8 +29,6 @@ function getNext14Days(): DateOption[] {
 
   for (let i = 0; i < 14; i++) {
     const d = new Date(now.getTime() + i * 86400000)
-    const dow = d.getDay()
-    if (dow === 0) continue // Skip Sundays
 
     days.push({
       date: d.toLocaleDateString('en-CA'),
@@ -65,15 +69,6 @@ export default function BookingPage() {
       desc: 'All side windows + rear + visor strip',
       details: 'Xpel XR Black ceramic · Blocks 85% IR heat & 99% UV · Lifetime warranty',
       tag: 'Most Popular',
-    },
-    {
-      id: 'carbon',
-      name: 'Carbon Special',
-      price: '$199',
-      original: '$400',
-      desc: 'All side windows + rear windshield',
-      details: 'GeoShield carbon film · UV protection · Lifetime warranty',
-      tag: 'Great Value',
     },
   ]
 
@@ -124,7 +119,7 @@ export default function BookingPage() {
           first_name: name,
           phone: formattedPhone,
           'Vehicle Information': vehicle,
-          lead_special_override: service === 'ceramic' ? 'Ceramic Special' : 'Carbon Special',
+          lead_special_override: 'Ceramic Special',
         }),
       })
 
@@ -144,7 +139,7 @@ export default function BookingPage() {
           lead_name: name,
           lead_phone: formattedPhone,
           lead_vehicle: vehicle,
-          lead_special: service === 'ceramic' ? 'Ceramic Special' : 'Carbon Special',
+          lead_special: 'Ceramic Special',
           appointment_time: timeStr,
         }),
       })
@@ -184,23 +179,40 @@ export default function BookingPage() {
         <div className="ambient-glow-orb w-[46vw] h-[46vw] max-w-[560px] max-h-[560px] -bottom-[14%] -right-[8%] bg-[radial-gradient(circle,rgba(255,255,255,0.9)_0%,transparent_70%)] opacity-[0.06] animate-blob-delay" />
       </div>
 
+      {/* HERO PHOTO BACKDROP */}
+      <div className="absolute top-0 left-0 right-0 h-[380px] sm:h-[460px] md:h-[560px] overflow-hidden pointer-events-none">
+        <Image
+          src="/jordyTinting.jpeg"
+          alt=""
+          fill
+          priority
+          className="object-cover object-center opacity-[0.16] blur-[2px] scale-110"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/50 via-[#0a0a0a]/85 to-[#0a0a0a]" />
+      </div>
+
       {/* NAV */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-[#0a0a0a]/85 backdrop-blur-xl border-b border-white/[0.06]">
-        <div className="font-display text-xl tracking-tight">
-          PURE VISION <span className="text-white/40">TINTS</span>
-        </div>
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-3 bg-[#0a0a0a]/85 backdrop-blur-xl border-b border-white/[0.06]">
+        <Image
+          src="/pvLogo.jpg"
+          alt="Pure Vision Tints"
+          width={480}
+          height={480}
+          priority
+          className="h-10 w-10 md:h-11 md:w-11 rounded-lg object-cover"
+        />
         <div className="flex items-center gap-4">
-          <a href="tel:+18327411485" className="text-sm text-white/40 hover:text-white transition-colors duration-200 hidden md:block">
-            (832) 741-1485
+          <a href={`tel:${PHONE_TEL}`} className="text-sm text-white/40 hover:text-white transition-colors duration-200 hidden md:block">
+            {PHONE_DISPLAY}
           </a>
           <div className="flex items-center gap-2 text-xs text-white/50 bg-white/[0.04] border border-white/[0.08] rounded-full px-3 py-1.5">
             <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-            Open Mon–Sat
+            Open Daily · 9AM–5PM
           </div>
         </div>
       </nav>
 
-      <div className="max-w-2xl mx-auto px-5 pt-28 pb-20 relative">
+      <div className="max-w-2xl mx-auto px-5 pt-28 pb-20 relative z-10">
 
         {/* ─── HERO ───────────────────────────────────────────── */}
         <div className="text-center mb-12 animate-fade-up">
@@ -214,6 +226,18 @@ export default function BookingPage() {
           <p className="text-white/40 text-base max-w-md mx-auto leading-relaxed">
             Premium window tinting by Jordy Chen. Machine-cut precision, Xpel ceramic film, lifetime warranty. Pick your time — done in 60 seconds.
           </p>
+
+          <a
+            href={GOOGLE_REVIEWS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] hover:border-accent/30 hover:bg-white/[0.06] transition-all duration-300 ease-smooth"
+          >
+            <span className="text-accent text-sm tracking-tighter">★★★★★</span>
+            <span className="text-sm text-white/70 font-semibold">{GOOGLE_RATING}</span>
+            <span className="text-white/15">·</span>
+            <span className="text-sm text-white/45 group-hover:text-white/70 transition-colors duration-300">{GOOGLE_REVIEW_COUNT}+ Google Reviews</span>
+          </a>
         </div>
 
         {/* ─── PROGRESS BAR ───────────────────────────────────── */}
@@ -247,8 +271,8 @@ export default function BookingPage() {
         {/* ─── STEP 1: SERVICE ────────────────────────────────── */}
         {step === 'service' && (
           <div className="animate-fade-up animate-fade-up-delay-2">
-            <h2 className="font-display text-2xl mb-2">Choose Your Special</h2>
-            <p className="text-white/35 text-sm mb-8">Both include lifetime warranty and machine-cut precision film.</p>
+            <h2 className="font-display text-2xl mb-2">This Month&apos;s Special</h2>
+            <p className="text-white/35 text-sm mb-8">Includes lifetime warranty and machine-cut precision film.</p>
 
             <div className="flex flex-col gap-3">
               {services.map(s => (
@@ -281,7 +305,7 @@ export default function BookingPage() {
 
             {/* Add-ons note */}
             <div className="mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
-              <span className="text-white/50 font-medium">Add-ons available:</span> Ceramic windshield $150 · Carbon windshield $125 · Sunroof $80/$160 — mention these when you arrive.
+              <span className="text-white/50 font-medium">Add-ons available:</span> Ceramic windshield $150 · Sunroof $80/$160 — mention these when you arrive.
             </div>
           </div>
         )}
@@ -294,7 +318,7 @@ export default function BookingPage() {
             </button>
 
             <h2 className="font-display text-2xl mb-2">Pick a Day</h2>
-            <p className="text-white/35 text-sm mb-6">Mon–Sat · {selectedService?.name}</p>
+            <p className="text-white/35 text-sm mb-6">Open daily, 9AM–5PM · {selectedService?.name}</p>
 
             {/* Date cards */}
             <div className="grid grid-cols-4 md:grid-cols-6 gap-2 mb-8">
@@ -591,7 +615,7 @@ export default function BookingPage() {
             )}
 
             <div className="text-sm text-white/25 mt-4">
-              Questions? Text us at <a href="tel:+18327411485" className="text-white/50 hover:text-white transition">(832) 741-1485</a>
+              Questions? Text us at <a href={`tel:${PHONE_TEL}`} className="text-white/50 hover:text-white transition">{PHONE_DISPLAY}</a>
             </div>
           </div>
         )}

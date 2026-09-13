@@ -7,8 +7,8 @@ const API = 'https://purevision-backend-production.up.railway.app'
 const PHONE_DISPLAY = '(832) 512-3301'
 const PHONE_TEL = '+18325123301'
 const GOOGLE_REVIEWS_URL = 'https://www.google.com/maps/place/PureVision+Tint/@30.0112867,-95.8206073,17z/data=!3m1!4b1!4m6!3m5!1s0x8640bf5c19b5ade3:0xe489391c99bff018!8m2!3d30.0112867!4d-95.8206073!16s%2Fg%2F11x2x2lqzf'
-const GOOGLE_RATING = 4.9
-const GOOGLE_REVIEW_COUNT = 126
+const GOOGLE_RATING = 5.0
+const GOOGLE_REVIEW_COUNT = 127
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 type Step = 'service' | 'date' | 'info' | 'confirm' | 'done'
@@ -64,7 +64,7 @@ export default function BookingPage() {
     {
       id: 'ceramic',
       name: 'Ceramic Special',
-      price: '$395',
+      price: '$299',
       original: '$700',
       desc: 'All side windows + rear + visor strip',
       details: 'Xpel XR Black ceramic · Blocks 85% IR heat & 99% UV · Lifetime warranty',
@@ -305,7 +305,7 @@ export default function BookingPage() {
 
             {/* Add-ons note */}
             <div className="mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
-              <span className="text-white/50 font-medium">Add-ons available:</span> Ceramic windshield $150 · Sunroof $80/$160 — mention these when you arrive.
+              <span className="text-white/50 font-medium">Add-ons available:</span> Ceramic windshield $185 · Sunroof single $80 dual $160 — mention these when you arrive.
             </div>
           </div>
         )}

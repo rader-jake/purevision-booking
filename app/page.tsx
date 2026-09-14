@@ -120,6 +120,7 @@ export default function BookingPage() {
           phone: formattedPhone,
           'Vehicle Information': vehicle,
           lead_special_override: 'Ceramic Special',
+          source: 'booking_page',
         }),
       })
 

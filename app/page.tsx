@@ -18,7 +18,20 @@ interface DateOption {
   dayName: string   // Mon, Tue...
   dayNum: string    // 1, 2...
   month: string     // Aug, Sep...
+  dow: number       // 0=Sun..6=Sat
   isToday: boolean
+}
+
+interface Special {
+  id: string
+  name: string
+  price: string
+  original: string
+  desc: string
+  details: string
+  tag?: string
+  daysAvailable?: number[]   // 0=Sun..6=Sat; omitted = every day
+  availabilityNote?: string  // date-step subtitle override
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -35,6 +48,7 @@ function getNext14Days(): DateOption[] {
       dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
       dayNum: d.toLocaleDateString('en-US', { day: 'numeric' }),
       month: d.toLocaleDateString('en-US', { month: 'short' }),
+      dow: d.getDay(),
       isToday: d.toLocaleDateString('en-CA') === todayStr,
     })
   }
@@ -60,7 +74,7 @@ export default function BookingPage() {
 
   const dates = getNext14Days()
 
-  const services = [
+  const services: Special[] = [
     {
       id: 'ceramic',
       name: 'Ceramic Special',
@@ -69,6 +83,17 @@ export default function BookingPage() {
       desc: 'All side windows + rear',
       details: 'HITEK Ceramic Black · Blocks 78% IR heat & 99% UV · Lifetime warranty',
       tag: 'Most Popular',
+    },
+    {
+      id: 'tesla-tuesday',
+      name: 'Tesla Tuesday',
+      price: '$600',
+      original: '$749',
+      desc: 'All side windows + rear + full glass roof (windshield not included)',
+      details: 'HITEK Ceramic Black · Blocks 78% IR heat & 99% UV · Lifetime warranty',
+      tag: 'Tuesdays Only',
+      daysAvailable: [2],
+      availabilityNote: 'Tuesdays only · 9AM–5PM',
     },
   ]
 
@@ -119,7 +144,7 @@ export default function BookingPage() {
           first_name: name,
           phone: formattedPhone,
           'Vehicle Information': vehicle,
-          lead_special_override: 'Ceramic Special',
+          lead_special_override: selectedService?.name,
           source: 'booking_page',
         }),
       })
@@ -140,7 +165,7 @@ export default function BookingPage() {
           lead_name: name,
           lead_phone: formattedPhone,
           lead_vehicle: vehicle,
-          lead_special: 'Ceramic Special',
+          lead_special: selectedService?.name,
           appointment_time: timeStr,
         }),
       })
@@ -168,6 +193,9 @@ export default function BookingPage() {
   }
 
   const selectedService = services.find(s => s.id === service)
+  const availableDates = selectedService?.daysAvailable
+    ? dates.filter(d => selectedService.daysAvailable!.includes(d.dow))
+    : dates
 
   const stepIndex = ['service', 'date', 'info', 'confirm'].indexOf(step)
   const stepLabels = ['Service', 'Date', 'Info', 'Confirm']
@@ -272,8 +300,8 @@ export default function BookingPage() {
         {/* ─── STEP 1: SERVICE ────────────────────────────────── */}
         {step === 'service' && (
           <div className="animate-fade-up animate-fade-up-delay-2">
-            <h2 className="font-display text-2xl mb-2">This Month&apos;s Special</h2>
-            <p className="text-white/35 text-sm mb-8">Includes lifetime warranty and machine-cut precision film.</p>
+            <h2 className="font-display text-2xl mb-2">{services.length > 1 ? 'Choose Your Special' : "This Month's Special"}</h2>
+            <p className="text-white/35 text-sm mb-8">{services.length > 1 ? 'Pick the one that fits your ride.' : 'Includes lifetime warranty and machine-cut precision film.'}</p>
 
             <div className="flex flex-col gap-3">
               {services.map(s => (
@@ -319,11 +347,11 @@ export default function BookingPage() {
             </button>
 
             <h2 className="font-display text-2xl mb-2">Pick a Day</h2>
-            <p className="text-white/35 text-sm mb-6">Open daily, 9AM–5PM · {selectedService?.name}</p>
+            <p className="text-white/35 text-sm mb-6">{selectedService?.availabilityNote ?? 'Open daily, 9AM–5PM'} · {selectedService?.name}</p>
 
             {/* Date cards */}
             <div className="grid grid-cols-4 md:grid-cols-6 gap-2 mb-8">
-              {dates.map(d => (
+              {availableDates.map(d => (
                 <button
                   key={d.date}
                   onClick={() => setSelectedDate(d)}
@@ -480,7 +508,7 @@ export default function BookingPage() {
 
               {existingTint === 'yes' && (
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-sm text-white/40 animate-fade-up">
-                  ✓ Tint removal is <span className="text-white/70 font-medium">included FREE</span> with both specials.
+                  ✓ Tint removal is <span className="text-white/70 font-medium">included FREE</span> with {services.length > 1 ? 'any of our specials' : 'this special'}.
                 </div>
               )}
             </div>

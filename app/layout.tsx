@@ -16,7 +16,7 @@ const display = DM_Serif_Display({
 
 export const metadata: Metadata = {
   title: 'Pure Vision Tints — Book Your Appointment',
-  description: 'Book your ceramic or carbon window tinting appointment at Pure Vision Tints in Hockley, TX. Premium Xpel XR Black ceramic film, machine-cut precision, lifetime warranty.',
+  description: 'Book your ceramic window tinting appointment at Pure Vision Tints in Hockley, TX. Premium HITEK Ceramic Black film, machine-cut precision, lifetime warranty.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

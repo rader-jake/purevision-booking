@@ -66,8 +66,8 @@ export default function BookingPage() {
       name: 'Ceramic Special',
       price: '$299',
       original: '$700',
-      desc: 'All side windows + rear + visor strip',
-      details: 'Xpel XR Black ceramic · Blocks 85% IR heat & 99% UV · Lifetime warranty',
+      desc: 'All side windows + rear',
+      details: 'HITEK Ceramic Black · Blocks 78% IR heat & 99% UV · Lifetime warranty',
       tag: 'Most Popular',
     },
   ]
@@ -225,7 +225,7 @@ export default function BookingPage() {
             <span className="bg-gradient-to-r from-white/70 via-white/40 to-white/20 bg-clip-text text-transparent italic">Tint Appointment</span>
           </h1>
           <p className="text-white/40 text-base max-w-md mx-auto leading-relaxed">
-            Premium window tinting by Jordy Chen. Machine-cut precision, Xpel ceramic film, lifetime warranty. Pick your time — done in 60 seconds.
+            Premium window tinting by Jordy Chen. Machine-cut precision, HITEK ceramic film, lifetime warranty. Pick your time — done in 60 seconds.
           </p>
 
           <a

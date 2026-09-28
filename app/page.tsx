@@ -136,7 +136,8 @@ export default function BookingPage() {
     const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+1${cleanPhone}`
 
     try {
-      // 1. Create the lead
+      // 1. Create the lead — appointment is NOT booked yet. It's only booked
+      // once the $20 deposit is actually paid (see /webhooks/square on the backend).
       await fetch(`${API}/webhook/sms-only/pure-vision-tints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,16 +150,19 @@ export default function BookingPage() {
         }),
       })
 
-      // Small delay to let lead be created
+      // Small delay to let the lead be created before we look it up by phone
       await new Promise(r => setTimeout(r, 2000))
 
-      // 2. Book the appointment
+      // 2. Create the $20 deposit link — no SMS is sent (Blooio blocks links/
+      // attachments to contacts who haven't replied yet). The link is shown
+      // directly on the confirmation screen instead. The appointment slot is
+      // held on the lead but only booked on the calendar once payment completes.
       const slotHourMap: Record<string, string> = {
         '9AM': '09:00', '11AM': '11:00', '1PM': '13:00', '3PM': '15:00', '5PM': '17:00',
       }
       const timeStr = `${selectedDate!.date} ${slotHourMap[selectedSlot] || '09:00'}`
 
-      await fetch(`${API}/tools/book-appointment`, {
+      const depositResp = await fetch(`${API}/tools/create-deposit-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -169,21 +173,14 @@ export default function BookingPage() {
           appointment_time: timeStr,
         }),
       })
-
-      // 3. Send deposit link
-      const depositResp = await fetch(`${API}/tools/send-deposit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lead_name: name,
-          lead_phone: formattedPhone,
-        }),
-      })
       const depositData = await depositResp.json()
-      if (depositData.deposit_url) {
-        setDepositUrl(depositData.deposit_url)
+
+      if (!depositData.success || !depositData.deposit_url) {
+        setError('Something went wrong creating your deposit link. Please try again or text us directly.')
+        return
       }
 
+      setDepositUrl(depositData.deposit_url)
       setStep('done')
     } catch (e) {
       setError('Something went wrong. Please try again or text us directly.')
@@ -571,7 +568,7 @@ export default function BookingPage() {
               <div className="p-6">
                 <div className="text-xs font-medium text-white/30 tracking-wide uppercase mb-3">Deposit</div>
                 <div className="text-sm text-white/50 leading-relaxed">
-                  A <span className="text-white/80 font-medium">$20 deposit</span> is required to lock in your spot. It goes toward your final price. The deposit link will be sent to your phone after booking.
+                  A <span className="text-white/80 font-medium">$20 deposit</span> is required to lock in your spot — it goes toward your final price. You&apos;ll pay it on the next screen, and your time slot is only reserved once it&apos;s paid.
                 </div>
               </div>
             </div>
@@ -590,36 +587,56 @@ export default function BookingPage() {
               {submitting ? (
                 <span className="flex items-center justify-center gap-3">
                   <span className="w-4 h-4 border-2 border-[#0a0a0a]/20 border-t-[#0a0a0a]/60 rounded-full animate-spin" />
-                  Booking your appointment...
+                  One moment...
                 </span>
               ) : (
-                'Confirm & Book Appointment →'
+                'Continue to Deposit →'
               )}
             </button>
 
             <p className="text-center text-xs text-white/20 mt-4">
-              By booking, you agree to receive a text with your deposit link and appointment confirmation.
+              By continuing, you agree to receive a text confirming your appointment once the deposit is paid.
             </p>
           </div>
         )}
 
-        {/* ─── STEP 5: DONE ───────────────────────────────────── */}
+        {/* ─── STEP 5: PAY DEPOSIT ────────────────────────────── */}
         {step === 'done' && (
           <div className="text-center animate-fade-up animate-fade-up-delay-2">
             <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-accent/[0.08] border border-accent/20 shadow-glow mb-6 text-5xl">
               🏁
             </div>
-            <h2 className="font-display text-3xl md:text-4xl mb-3">You&apos;re Booked!</h2>
-            <p className="text-white/40 text-base max-w-md mx-auto mb-8 leading-relaxed">
-              Your appointment is confirmed for <span className="text-white/80 font-medium">{selectedDate?.dayName} {selectedDate?.month} {selectedDate?.dayNum} at {selectedSlot}</span>. A $20 deposit link has been sent to your phone.
+            <h2 className="font-display text-3xl md:text-4xl mb-3">One Step Left</h2>
+            <p className="text-white/40 text-base max-w-md mx-auto mb-2 leading-relaxed">
+              Your spot for <span className="text-white/80 font-medium">{selectedDate?.dayName} {selectedDate?.month} {selectedDate?.dayNum} at {selectedSlot}</span> is held but <span className="text-white/80 font-medium">not yet confirmed</span>.
             </p>
+            <p className="text-white/30 text-sm max-w-md mx-auto mb-8 leading-relaxed">
+              Pay the $20 deposit below to lock it in — it goes toward your final price.
+            </p>
+
+            <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6 max-w-sm mx-auto mb-6 text-left">
+              <div className="text-xs font-medium text-white/30 tracking-wide uppercase mb-3">Appointment</div>
+              <div className="text-sm text-white/70 mb-1">{selectedService?.name} · {vehicle}</div>
+              <div className="text-sm text-white/40">{selectedDate?.dayName} {selectedDate?.month} {selectedDate?.dayNum} at {selectedSlot}</div>
+            </div>
+
+            {depositUrl && (
+              <a
+                href={depositUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-shine w-full max-w-sm mx-auto flex items-center justify-center gap-2 py-4 rounded-2xl bg-white text-[#0a0a0a] font-semibold text-[15px] hover:bg-white/90 transition-all duration-300 ease-smooth hover:translate-y-[-2px] hover:shadow-glow-white mb-8"
+              >
+                💰 Pay $20 Deposit to Confirm
+              </a>
+            )}
 
             <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6 max-w-sm mx-auto mb-8 text-left">
               <div className="text-xs font-medium text-white/30 tracking-wide uppercase mb-4">Next Steps</div>
               <div className="flex flex-col gap-3 text-sm">
                 <div className="flex items-start gap-3">
                   <span className="text-white/20 text-xs mt-0.5">01</span>
-                  <span className="text-white/60">Complete the $20 deposit via the link sent to your phone</span>
+                  <span className="text-white/60">Pay the $20 deposit above — you&apos;ll get a text the moment it&apos;s confirmed</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="text-white/20 text-xs mt-0.5">02</span>
@@ -631,17 +648,6 @@ export default function BookingPage() {
                 </div>
               </div>
             </div>
-
-            {depositUrl && (
-              <a
-                href={depositUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-shine inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#0a0a0a] font-semibold text-sm hover:bg-white/90 transition-all duration-300 ease-smooth hover:translate-y-[-2px] hover:shadow-glow-white mb-4"
-              >
-                💰 Pay Deposit Now
-              </a>
-            )}
 
             <div className="text-sm text-white/25 mt-4">
               Questions? Text us at <a href={`tel:${PHONE_TEL}`} className="text-white/50 hover:text-white transition">{PHONE_DISPLAY}</a>

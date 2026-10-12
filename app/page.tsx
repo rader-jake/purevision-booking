@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 
 const API = 'https://purevision-backend-production.up.railway.app'
@@ -60,6 +60,9 @@ export default function BookingPage() {
   const [step, setStep] = useState<Step>('service')
   const [service, setService] = useState('')
   const [selectedDate, setSelectedDate] = useState<DateOption | null>(null)
+  const timesRef = useRef<HTMLDivElement>(null)
+  const progressRef = useRef<HTMLDivElement>(null)
+  const firstRender = useRef(true)
   const [slots, setSlots] = useState<string[]>([])
   const [selectedSlot, setSelectedSlot] = useState('')
   const [loadingSlots, setLoadingSlots] = useState(false)
@@ -120,6 +123,20 @@ export default function BookingPage() {
         setLoadingSlots(false)
         setError('Unable to load availability. Please try again.')
       })
+  }, [selectedDate])
+
+  // On each step change, tuck the hero away so the step content starts near the top (mobile)
+  useEffect(() => {
+    if (firstRender.current) { firstRender.current = false; return }
+    if (progressRef.current) progressRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    else window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [step])
+
+  // Bring the time slots into view as soon as a day is picked
+  useEffect(() => {
+    if (!selectedDate) return
+    const t = setTimeout(() => timesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
+    return () => clearTimeout(t)
   }, [selectedDate])
 
   // Book appointment + send deposit
@@ -268,7 +285,7 @@ export default function BookingPage() {
 
         {/* ─── PROGRESS BAR ───────────────────────────────────── */}
         {step !== 'done' && (
-          <div className="mb-10 animate-fade-up animate-fade-up-delay-1">
+          <div ref={progressRef} className="mb-10 animate-fade-up animate-fade-up-delay-1 scroll-mt-20">
             <div className="flex items-center gap-2 mb-2.5">
               {stepLabels.map((s, i) => (
                 <div key={s} className="flex items-center gap-2 flex-1">
@@ -347,12 +364,12 @@ export default function BookingPage() {
             <p className="text-white/35 text-sm mb-6">{selectedService?.availabilityNote ?? 'Open daily, 9AM–5PM'} · {selectedService?.name}</p>
 
             {/* Date cards */}
-            <div className="grid grid-cols-4 md:grid-cols-6 gap-2 mb-8">
+            <div className="flex md:grid md:grid-cols-7 gap-2 mb-6 overflow-x-auto md:overflow-visible snap-x -mx-5 px-5 md:mx-0 md:px-0 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {availableDates.map(d => (
                 <button
                   key={d.date}
                   onClick={() => setSelectedDate(d)}
-                  className={`date-card flex flex-col items-center p-3 rounded-xl border cursor-pointer ${selectedDate?.date === d.date
+                  className={`date-card shrink-0 w-[68px] md:w-auto snap-start flex flex-col items-center p-3 rounded-xl border cursor-pointer ${selectedDate?.date === d.date
                       ? 'selected'
                       : 'bg-white/[0.02] border-white/[0.08]'
                     }`}
@@ -380,8 +397,11 @@ export default function BookingPage() {
             </div>
 
             {/* Time slots */}
+            {!selectedDate && (
+              <p className="text-center text-sm text-white/30 py-6">Tap a day to see available times</p>
+            )}
             {selectedDate && (
-              <div className="animate-fade-up">
+              <div ref={timesRef} className="animate-fade-up scroll-mt-24">
                 <h3 className="text-sm font-medium text-white/50 mb-3">
                   Available times · {selectedDate.dayName} {selectedDate.month} {selectedDate.dayNum}
                 </h3>

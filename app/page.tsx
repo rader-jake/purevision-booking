@@ -94,11 +94,11 @@ export default function BookingPage() {
     {
       id: 'ceramic',
       name: 'Ceramic Special',
-      price: '$395',
-      original: '$695',
+      price: '$299',
+      original: '$600',
       desc: 'All side windows + rear',
       details: 'HITEK Ceramic Black · Blocks 78% IR heat & 99% UV · Lifetime warranty',
-      tag: 'Most Popular',
+      tag: 'Fall Special',
     },
     {
       id: 'tesla-tuesday',

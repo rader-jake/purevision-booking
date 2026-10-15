@@ -35,6 +35,19 @@ interface Special {
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
+function getCookie(name: string): string | undefined {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+  return m ? decodeURIComponent(m[1]) : undefined
+}
+
+// Meta's click id: the _fbc cookie, or built from ?fbclid= when the pixel hasn't set it yet
+function getFbc(): string | undefined {
+  const fromCookie = getCookie('_fbc')
+  if (fromCookie) return fromCookie
+  const fbclid = new URLSearchParams(window.location.search).get('fbclid')
+  return fbclid ? `fb.1.${Date.now()}.${fbclid}` : undefined
+}
+
 function getNext14Days(): DateOption[] {
   const days: DateOption[] = []
   const now = new Date()
@@ -188,6 +201,10 @@ export default function BookingPage() {
           lead_vehicle: vehicle,
           lead_special: selectedService?.name,
           appointment_time: timeStr,
+          // Lets the backend attribute the paid deposit to the ad click (Meta Conversions API)
+          fbp: getCookie('_fbp'),
+          fbc: getFbc(),
+          source_url: window.location.href,
         }),
       })
       const depositData = await depositResp.json()

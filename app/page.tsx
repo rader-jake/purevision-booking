@@ -215,6 +215,9 @@ export default function BookingPage() {
       }
 
       setDepositUrl(depositData.deposit_url)
+      // Mid-funnel signal for Meta: contact info + time slot submitted, deposit not yet paid.
+      // (The real "Purchase" is sent server-side only once the $20 is paid.)
+      ;(window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.('track', 'Lead', { content_name: selectedService?.name })
       setStep('done')
     } catch (e) {
       setError('Something went wrong. Please try again or text us directly.')

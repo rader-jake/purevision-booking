@@ -10,8 +10,7 @@ const PHONE_TEL = '+18325123301'
 const TEXT_DISPLAY = '(832) 741-0931'
 const TEXT_TEL = '+18327410931'
 const GOOGLE_REVIEWS_URL = 'https://www.google.com/maps/place/PureVision+Tint/@30.0112867,-95.8206073,17z/data=!3m1!4b1!4m6!3m5!1s0x8640bf5c19b5ade3:0xe489391c99bff018!8m2!3d30.0112867!4d-95.8206073!16s%2Fg%2F11x2x2lqzf'
-const GOOGLE_RATING = 5.0
-const GOOGLE_REVIEW_COUNT = 127
+const GOOGLE_REVIEW_COUNT = 125
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 type Step = 'service' | 'date' | 'info' | 'confirm' | 'done'
@@ -304,9 +303,8 @@ export default function BookingPage() {
             className="group inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] hover:border-accent/30 hover:bg-white/[0.06] transition-all duration-300 ease-smooth"
           >
             <span className="text-accent text-sm tracking-tighter">★★★★★</span>
-            <span className="text-sm text-white/70 font-semibold">{GOOGLE_RATING}</span>
             <span className="text-white/15">·</span>
-            <span className="text-sm text-white/45 group-hover:text-white/70 transition-colors duration-300">{GOOGLE_REVIEW_COUNT}+ Google Reviews</span>
+            <span className="text-sm text-white/55 group-hover:text-white/80 transition-colors duration-300">{GOOGLE_REVIEW_COUNT}+ five-star Google reviews</span>
           </a>
         </div>
 
@@ -731,7 +729,7 @@ export default function BookingPage() {
               <span className="flex items-center gap-1.5"><span className="text-accent/50">✓</span> Free tint removal</span>
             </div>
             <div className="text-center mt-6 text-sm text-white/30">
-              Questions? <a href={`sms:${TEXT_TEL}?&body=${encodeURIComponent('Hi! I have a question about window tint.')}`} className="text-white/60 underline underline-offset-4 decoration-white/20 hover:text-white transition-colors">Text us at {TEXT_DISPLAY}</a>
+              Questions? <a href={`sms:${TEXT_TEL}?&body=${encodeURIComponent('Hi! I have a question about window tint.')}`} className="text-white/60 underline underline-offset-4 decoration-white/20 hover:text-white transition-colors">Text us at {TEXT_DISPLAY}</a> — we usually reply in under a minute
             </div>
             <div className="text-center mt-6 text-[11px] text-white/15">
               © {new Date().getFullYear()} Pure Vision Tints · Hockley, TX

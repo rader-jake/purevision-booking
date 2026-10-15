@@ -12,8 +12,46 @@ const TEXT_TEL = '+18327410931'
 const GOOGLE_REVIEWS_URL = 'https://www.google.com/maps/place/PureVision+Tint/@30.0112867,-95.8206073,17z/data=!3m1!4b1!4m6!3m5!1s0x8640bf5c19b5ade3:0xe489391c99bff018!8m2!3d30.0112867!4d-95.8206073!16s%2Fg%2F11x2x2lqzf'
 const GOOGLE_REVIEW_COUNT = 125
 
+const WORK_PHOTOS = [
+  { src: '/work/cybertruck.webp', caption: 'Tesla Cybertruck', position: 'object-center' },
+  { src: '/work/model3.webp', caption: 'Tesla Model 3', position: 'object-[35%_50%]' },
+  { src: '/work/raptor.webp', caption: 'Ford Raptor', position: 'object-center' },
+]
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-type Step = 'service' | 'date' | 'info' | 'confirm' | 'done'
+type Step = 'vehicle' | 'info' | 'service' | 'date' | 'confirm' | 'done'
+
+interface Brand {
+  id: string
+  name: string
+  logo?: string   // text-only bubble when omitted
+  models: string[]
+}
+
+// Order = popularity; the first BRANDS_SHOWN appear before "More"
+const BRANDS_SHOWN = 12
+const BRANDS: Brand[] = [
+  { id: 'ford', name: 'Ford', logo: '/brands/ford.svg', models: ['F-150', 'F-250', 'F-350', 'Bronco', 'Mustang', 'Explorer', 'Expedition', 'Escape', 'Ranger', 'Maverick', 'Edge'] },
+  { id: 'tesla', name: 'Tesla', logo: '/brands/tesla.svg', models: ['Model 3', 'Model Y', 'Model S', 'Model X', 'Cybertruck'] },
+  { id: 'honda', name: 'Honda', logo: '/brands/honda.svg', models: ['Civic', 'Accord', 'CR-V', 'Pilot', 'HR-V', 'Odyssey', 'Ridgeline'] },
+  { id: 'hyundai', name: 'Hyundai', logo: '/brands/hyundai.svg', models: ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Palisade', 'Kona', 'Ioniq 5'] },
+  { id: 'chevrolet', name: 'Chevrolet', logo: '/brands/chevrolet.svg', models: ['Silverado 1500', 'Silverado 2500', 'Tahoe', 'Suburban', 'Equinox', 'Colorado', 'Camaro', 'Corvette', 'Malibu', 'Traverse'] },
+  { id: 'volkswagen', name: 'Volkswagen', logo: '/brands/volkswagen.svg', models: ['Jetta', 'Atlas', 'Tiguan', 'Golf', 'Taos', 'ID.4'] },
+  { id: 'ram', name: 'Ram', logo: '/brands/ram.svg', models: ['1500', '2500', '3500', 'TRX'] },
+  { id: 'toyota', name: 'Toyota', logo: '/brands/toyota.svg', models: ['Camry', 'Corolla', 'RAV4', 'Tacoma', 'Tundra', 'Highlander', '4Runner', 'Sequoia'] },
+  { id: 'nissan', name: 'Nissan', logo: '/brands/nissan.svg', models: ['Altima', 'Rogue', 'Frontier', 'Titan', 'Sentra', 'Pathfinder'] },
+  { id: 'gmc', name: 'GMC', models: ['Sierra 1500', 'Sierra 2500', 'Yukon', 'Acadia', 'Canyon', 'Terrain'] },
+  { id: 'jeep', name: 'Jeep', logo: '/brands/jeep.svg', models: ['Wrangler', 'Grand Cherokee', 'Gladiator', 'Cherokee', 'Compass'] },
+  { id: 'dodge', name: 'Dodge', models: ['Charger', 'Challenger', 'Durango'] },
+  { id: 'kia', name: 'Kia', logo: '/brands/kia.svg', models: ['Telluride', 'Sorento', 'Sportage', 'K5', 'Soul', 'Carnival'] },
+  { id: 'bmw', name: 'BMW', logo: '/brands/bmw.svg', models: ['3 Series', '5 Series', 'X3', 'X5', 'X1', 'M3'] },
+  { id: 'mercedes', name: 'Mercedes-Benz', models: ['C-Class', 'E-Class', 'GLC', 'GLE', 'S-Class', 'G-Class'] },
+  { id: 'subaru', name: 'Subaru', logo: '/brands/subaru.svg', models: ['Outback', 'Forester', 'Crosstrek', 'WRX', 'Ascent'] },
+  { id: 'audi', name: 'Audi', logo: '/brands/audi.svg', models: ['A4', 'A6', 'Q5', 'Q7', 'Q3'] },
+  { id: 'cadillac', name: 'Cadillac', logo: '/brands/cadillac.svg', models: ['Escalade', 'CT5', 'XT5', 'XT6'] },
+  { id: 'lexus', name: 'Lexus', models: ['RX', 'IS', 'ES', 'GX', 'NX'] },
+  { id: 'mazda', name: 'Mazda', logo: '/brands/mazda.svg', models: ['CX-5', 'Mazda3', 'CX-30', 'CX-50', 'MX-5 Miata'] },
+]
 
 interface DateOption {
   date: string      // YYYY-MM-DD
@@ -73,18 +111,25 @@ function getNext14Days(): DateOption[] {
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function BookingPage() {
-  const [step, setStep] = useState<Step>('service')
+  const [step, setStep] = useState<Step>('vehicle')
   const [service, setService] = useState('')
   const [selectedDate, setSelectedDate] = useState<DateOption | null>(null)
   const timesRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
   const firstRender = useRef(true)
+  const leadTracked = useRef(false)
   const [slots, setSlots] = useState<string[]>([])
   const [selectedSlot, setSelectedSlot] = useState('')
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [vehicle, setVehicle] = useState('')
+  const [vBrand, setVBrand] = useState<Brand | null>(null)
+  const [vModel, setVModel] = useState('')
+  const [pickedBubble, setPickedBubble] = useState('')
+  const [showMoreBrands, setShowMoreBrands] = useState(false)
+  const [otherMode, setOtherMode] = useState<'' | 'brand' | 'model' | 'year'>('')
+  const [otherText, setOtherText] = useState('')
   const [shade, setShade] = useState('20%')
   const [existingTint, setExistingTint] = useState('no')
   const [submitting, setSubmitting] = useState(false)
@@ -156,6 +201,88 @@ export default function BookingPage() {
     return () => clearTimeout(t)
   }, [selectedDate])
 
+  // ── Vehicle bubbles ────────────────────────────────────────────────
+  function pickBrand(b: Brand) {
+    setPickedBubble(b.id)
+    setTimeout(() => { setVBrand(b); setPickedBubble('') }, 380)
+  }
+
+  function pickModel(m: string) {
+    setPickedBubble(m)
+    setTimeout(() => { setVModel(m); setPickedBubble('') }, 320)
+  }
+
+  function pickYear(y: string) {
+    setPickedBubble(y)
+    setTimeout(() => {
+      setVehicle(`${y} ${vBrand?.name ?? ''} ${vModel}`.trim())
+      setPickedBubble('')
+      setStep('info')
+    }, 360)
+  }
+
+  function submitOther() {
+    const text = otherText.trim()
+    if (!text) return
+    if (otherMode === 'brand') {
+      setVehicle(text)
+      setStep('info')
+    } else if (otherMode === 'model') {
+      setVModel(text)
+    } else if (otherMode === 'year') {
+      setVehicle(`${text} ${vBrand?.name ?? ''} ${vModel}`.trim())
+      setStep('info')
+    }
+    setOtherMode('')
+    setOtherText('')
+  }
+
+  function resetVehicle() {
+    setVBrand(null)
+    setVModel('')
+    setVehicle('')
+    setOtherMode('')
+    setOtherText('')
+    setPickedBubble('')
+  }
+
+  // ── Contact info → save the lead right away (no text is sent) ──────
+  function submitInfo() {
+    const digits = phone.replace(/\D/g, '')
+    if (!name.trim() || digits.length < 10) {
+      setError('Please enter your name and a 10-digit phone number')
+      return
+    }
+    setError('')
+
+    const chosen = service
+      ? services.find(s => s.id === service)
+      : visibleServices.length === 1 ? visibleServices[0] : undefined
+    if (chosen && !service) setService(chosen.id)
+
+    const cleanPhone = phone.replace(/[\s()-]/g, '')
+    const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+1${cleanPhone}`
+    fetch(`${API}/webhook/sms-only/pure-vision-tints`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: name,
+        phone: formattedPhone,
+        'Vehicle Information': vehicle,
+        lead_special_override: chosen?.name,
+        source: 'booking_page',
+      }),
+    }).catch(() => { /* retried at the final step */ })
+
+    // Meta "Lead": name + phone captured. The real "Purchase" is sent server-side only once the $20 is paid.
+    if (!leadTracked.current) {
+      leadTracked.current = true
+      ;(window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.('track', 'Lead', { content_name: chosen?.name })
+    }
+
+    setStep(chosen ? 'date' : 'service')
+  }
+
   // Book appointment + send deposit
   async function handleSubmit() {
     if (!name || !phone || !vehicle) {
@@ -170,8 +297,9 @@ export default function BookingPage() {
     const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+1${cleanPhone}`
 
     try {
-      // 1. Create the lead — appointment is NOT booked yet. It's only booked
-      // once the $20 deposit is actually paid (see /webhooks/square on the backend).
+      // 1. Make sure the lead exists (it was normally saved already when they entered their
+      // phone — the backend de-dupes by phone). The appointment is NOT booked yet; it's only
+      // booked once the $20 deposit is actually paid (see /webhooks/square on the backend).
       await fetch(`${API}/webhook/sms-only/pure-vision-tints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,9 +311,6 @@ export default function BookingPage() {
           source: 'booking_page',
         }),
       })
-
-      // Small delay to let the lead be created before we look it up by phone
-      await new Promise(r => setTimeout(r, 2000))
 
       // 2. Create the $20 deposit link — no SMS is sent (Blooio blocks links/
       // attachments to contacts who haven't replied yet). The link is shown
@@ -219,9 +344,6 @@ export default function BookingPage() {
       }
 
       setDepositUrl(depositData.deposit_url)
-      // Mid-funnel signal for Meta: contact info + time slot submitted, deposit not yet paid.
-      // (The real "Purchase" is sent server-side only once the $20 is paid.)
-      ;(window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.('track', 'Lead', { content_name: selectedService?.name })
       setStep('done')
     } catch (e) {
       setError('Something went wrong. Please try again or text us directly.')
@@ -237,8 +359,14 @@ export default function BookingPage() {
     ? dates.filter(d => selectedService.daysAvailable!.includes(d.dow))
     : dates
 
-  const stepIndex = ['service', 'date', 'info', 'confirm'].indexOf(step)
-  const stepLabels = ['Service', 'Date', 'Info', 'Confirm']
+  const activeOffer = selectedService ?? visibleServices[0]
+  const vStage: 'brand' | 'model' | 'year' = !vBrand ? 'brand' : !vModel ? 'model' : 'year'
+  const thisYear = new Date().getFullYear()
+  const years = Array.from({ length: 16 }, (_, i) => String(thisYear + 1 - i))
+  const brandList = showMoreBrands ? BRANDS : BRANDS.slice(0, BRANDS_SHOWN)
+  const stepOrder: Record<Step, number> = { vehicle: 0, info: 1, service: 1, date: 2, confirm: 3, done: 3 }
+  const stepIndex = stepOrder[step]
+  const stepLabels = ['Vehicle', 'Details', 'Time', 'Confirm']
 
   return (
     <main className="min-h-screen checkered-bg">
@@ -336,9 +464,201 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* ─── STEP 1: SERVICE ────────────────────────────────── */}
+        {/* ─── STEP 1: VEHICLE ────────────────────────────────── */}
+        {step === 'vehicle' && (
+          <div className="animate-fade-up animate-fade-up-delay-2">
+            {activeOffer && (
+              <div className="mb-8 p-4 rounded-2xl border border-accent/25 bg-accent/[0.06] flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  {activeOffer.tag && <div className="text-[10px] font-semibold tracking-wider uppercase text-accent-light/80 mb-0.5">{activeOffer.tag}</div>}
+                  <div className="text-sm text-white/70">{activeOffer.name}</div>
+                  <div className="text-xs text-white/35">{activeOffer.desc}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="font-display text-2xl">{activeOffer.price}</span>
+                  <span className="text-xs line-through text-white/30 ml-1.5">{activeOffer.original}</span>
+                </div>
+              </div>
+            )}
+
+            {vStage !== 'brand' && (
+              <button
+                onClick={() => { if (vStage === 'model') resetVehicle(); else { setVModel(''); setOtherMode(''); setOtherText('') } }}
+                className="text-sm text-white/30 hover:text-white/60 transition mb-5 flex items-center gap-2"
+              >
+                ← {vStage === 'model' ? 'Change brand' : 'Change model'}
+              </button>
+            )}
+
+            <h2 className="font-display text-2xl md:text-3xl mb-2 text-center">
+              {vStage === 'brand' ? 'What do you drive?' : vStage === 'model' ? `Which ${vBrand?.name}?` : 'What year?'}
+            </h2>
+            <p className="text-white/35 text-sm mb-8 text-center">
+              {vStage === 'brand' ? 'Tap your brand to get started.' : vStage === 'model' ? 'Tap your model.' : `${vBrand?.name} ${vModel}`}
+            </p>
+
+            {/* Free-text fallback (Other brand / model / older year) */}
+            {otherMode && (
+              <div className="max-w-sm mx-auto animate-fade-up">
+                <input
+                  autoFocus
+                  type={otherMode === 'year' ? 'tel' : 'text'}
+                  inputMode={otherMode === 'year' ? 'numeric' : undefined}
+                  className="booking-input"
+                  placeholder={otherMode === 'brand' ? 'Year, make & model (e.g. 2022 Lexus RX)' : otherMode === 'model' ? 'Your model' : 'Year (e.g. 2008)'}
+                  value={otherText}
+                  onChange={e => setOtherText(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') submitOther() }}
+                />
+                <button
+                  onClick={submitOther}
+                  disabled={!otherText.trim()}
+                  className="btn-shine w-full mt-4 py-4 rounded-2xl bg-white text-[#0a0a0a] font-semibold text-[15px] transition-all duration-300 ease-smooth hover:translate-y-[-2px] hover:shadow-glow-white disabled:bg-white/10 disabled:text-white/30 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                >
+                  Continue →
+                </button>
+                <button onClick={() => { setOtherMode(''); setOtherText('') }} className="block mx-auto mt-4 text-sm text-white/30 hover:text-white/60 transition">
+                  ← Back to the list
+                </button>
+              </div>
+            )}
+
+            {/* Brand bubbles */}
+            {!otherMode && vStage === 'brand' && (
+              <div className="flex flex-wrap justify-center gap-2.5">
+                {brandList.map((b, i) => {
+                  const big = i < 7
+                  return (
+                    <div key={b.id} style={{ animation: `bubbleFloat ${5 + (i % 4)}s ease-in-out ${(i % 5) * 0.4}s infinite` }}>
+                      <button
+                        onClick={() => pickBrand(b)}
+                        aria-label={b.name}
+                        className={`bubble ${big ? 'w-[100px] h-[100px]' : 'w-[84px] h-[84px]'} rounded-full flex flex-col items-center justify-center gap-1.5 ${pickedBubble === b.id ? 'picked' : pickedBubble ? 'dimmed' : ''}`}
+                        style={{ animation: `bubblePop 0.55s cubic-bezier(0.16,1,0.3,1) ${i * 45}ms backwards` }}
+                      >
+                        {b.logo && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={b.logo} alt="" className={big ? 'h-8 w-8 object-contain' : 'h-6 w-6 object-contain'} />
+                        )}
+                        <span className={`${b.logo ? 'text-[10px]' : 'text-[13px]'} font-medium text-white/80 leading-tight text-center px-1`}>{b.name}</span>
+                      </button>
+                    </div>
+                  )
+                })}
+                <div style={{ animation: `bubbleFloat 6s ease-in-out 0.8s infinite` }}>
+                  <button
+                    onClick={() => showMoreBrands ? setOtherMode('brand') : setShowMoreBrands(true)}
+                    className="bubble w-[84px] h-[84px] rounded-full flex items-center justify-center text-[12px] font-medium text-white/50 border-dashed"
+                    style={{ animation: `bubblePop 0.55s cubic-bezier(0.16,1,0.3,1) ${brandList.length * 45}ms backwards` }}
+                  >
+                    {showMoreBrands ? 'Other' : '+ More'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Model bubbles */}
+            {!otherMode && vStage === 'model' && vBrand && (
+              <div className="flex flex-wrap justify-center gap-2.5">
+                {[...vBrand.models, 'Other'].map((m, i) => (
+                  <div key={m} style={{ animation: `bubbleFloat ${5 + (i % 3)}s ease-in-out ${(i % 4) * 0.4}s infinite` }}>
+                    <button
+                      onClick={() => m === 'Other' ? setOtherMode('model') : pickModel(m)}
+                      className={`bubble rounded-full px-5 py-3.5 text-sm font-medium text-white/80 ${m === 'Other' ? 'border-dashed text-white/50' : ''} ${pickedBubble === m ? 'picked' : pickedBubble ? 'dimmed' : ''}`}
+                      style={{ animation: `bubblePop 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 40}ms backwards` }}
+                    >
+                      {m}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Year bubbles */}
+            {!otherMode && vStage === 'year' && (
+              <div className="flex flex-wrap justify-center gap-2.5">
+                {[...years, 'Older'].map((y, i) => (
+                  <div key={y} style={{ animation: `bubbleFloat ${5 + (i % 3)}s ease-in-out ${(i % 4) * 0.35}s infinite` }}>
+                    <button
+                      onClick={() => y === 'Older' ? setOtherMode('year') : pickYear(y)}
+                      className={`bubble rounded-full ${y === 'Older' ? 'px-5 h-[60px] border-dashed text-white/50' : 'w-[64px] h-[64px]'} text-sm font-medium text-white/80 ${pickedBubble === y ? 'picked' : pickedBubble ? 'dimmed' : ''}`}
+                      style={{ animation: `bubblePop 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 35}ms backwards` }}
+                    >
+                      {y}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {vStage === 'brand' && !otherMode && (
+              <div className="mt-10">
+            {/* Add-ons note */}
+              <div className="mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
+                <span className="text-white/50 font-medium">Add-ons available:</span> Ceramic windshield $185 · Sunroof single $80 dual $160 — mention these when you arrive.
+              </div>
+
+              {/* Wait/drop-off — answered up front so it isn't a reason to hesitate */}
+              <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
+                <span className="text-white/50 font-medium">Wait or drop off:</span> relax in our WiFi waiting room, or drop your car and go — most jobs are done in 1–2 hours.
+              </div>
+
+              {hiddenServices.length > 0 && (
+                <div className="mt-5 text-center text-sm text-white/30">
+                  {hiddenServices.map(h => (
+                    service === h.id ? (
+                      <button
+                        key={h.id}
+                        onClick={() => setService('')}
+                        className="underline underline-offset-4 decoration-white/20 hover:text-white/60 transition-colors"
+                      >
+                        Switch back to {visibleServices[0].name}
+                      </button>
+                    ) : (
+                      <button
+                        key={h.id}
+                        onClick={() => { setService(h.id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        className="underline underline-offset-4 decoration-white/20 hover:text-white/60 transition-colors"
+                      >
+                        Looking for {h.name}?
+                      </button>
+                    )
+                  ))}
+                </div>
+              )}
+
+              {/* Recent work */}
+              <div className="mt-10">
+                <h3 className="text-xs font-medium text-white/40 tracking-wide uppercase mb-3">Recent work from our shop</h3>
+                <div className="flex gap-3 overflow-x-auto snap-x scroll-pl-5 -mx-5 px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {WORK_PHOTOS.map(w => (
+                    <figure key={w.src} className="shrink-0 snap-start w-[62%] sm:w-[44%] md:w-[31%]">
+                      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.02]">
+                        <Image
+                          src={w.src}
+                          alt={w.caption}
+                          fill
+                          sizes="(max-width: 640px) 62vw, 220px"
+                          className={`object-cover ${w.position}`}
+                        />
+                      </div>
+                      <figcaption className="mt-2 text-xs text-white/35">{w.caption}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+              </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── SERVICE (only shown when more than one special is visible) ─── */}
         {step === 'service' && (
           <div className="animate-fade-up animate-fade-up-delay-2">
+            <button onClick={() => setStep('info')} className="text-sm text-white/30 hover:text-white/60 transition mb-6 flex items-center gap-2">
+              ← Back
+            </button>
+
             <h2 className="font-display text-2xl mb-2">{visibleServices.length > 1 ? 'Choose Your Special' : "This Month's Special"}</h2>
             <p className="text-white/35 text-sm mb-8">{visibleServices.length > 1 ? 'Pick the one that fits your ride.' : 'Includes lifetime warranty and machine-cut precision film.'}</p>
 
@@ -370,45 +690,21 @@ export default function BookingPage() {
                 </button>
               ))}
             </div>
-
-            {/* Add-ons note */}
-            <div className="mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
-              <span className="text-white/50 font-medium">Add-ons available:</span> Ceramic windshield $185 · Sunroof single $80 dual $160 — mention these when you arrive.
-            </div>
-
-            {/* Wait/drop-off — answered up front so it isn't a reason to hesitate */}
-            <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
-              <span className="text-white/50 font-medium">Wait or drop off:</span> relax in our WiFi waiting room, or drop your car and go — most jobs are done in 1–2 hours.
-            </div>
-
-            {hiddenServices.length > 0 && (
-              <div className="mt-5 text-center text-sm text-white/30">
-                {hiddenServices.map(h => (
-                  <button
-                    key={h.id}
-                    onClick={() => { setService(h.id); setStep('date') }}
-                    className="underline underline-offset-4 decoration-white/20 hover:text-white/60 transition-colors"
-                  >
-                    Looking for {h.name}?
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
         {/* ─── STEP 2: DATE & TIME ────────────────────────────── */}
         {step === 'date' && (
           <div className="animate-fade-up animate-fade-up-delay-2">
-            <button onClick={() => setStep('service')} className="text-sm text-white/30 hover:text-white/60 transition mb-6 flex items-center gap-2">
-              ← Back to specials
+            <button onClick={() => setStep(visibleServices.length > 1 ? 'service' : 'info')} className="text-sm text-white/30 hover:text-white/60 transition mb-6 flex items-center gap-2">
+              ← Back
             </button>
 
             <h2 className="font-display text-2xl mb-2">Pick a Day</h2>
             <p className="text-white/35 text-sm mb-6">{selectedService?.availabilityNote ?? 'Open daily, 9AM–5PM'} · {selectedService?.name}</p>
 
             {/* Date cards */}
-            <div className="flex md:grid md:grid-cols-7 gap-2 mb-6 overflow-x-auto md:overflow-visible snap-x -mx-5 px-5 md:mx-0 md:px-0 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex md:grid md:grid-cols-7 gap-2 mb-6 overflow-x-auto md:overflow-visible snap-x scroll-pl-5 -mx-5 px-5 md:mx-0 md:px-0 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {availableDates.map(d => (
                 <button
                   key={d.date}
@@ -479,7 +775,7 @@ export default function BookingPage() {
 
                 {selectedSlot && (
                   <button
-                    onClick={() => setStep('info')}
+                    onClick={() => setStep('confirm')}
                     className="btn-shine w-full mt-6 py-4 rounded-2xl bg-white text-[#0a0a0a] font-semibold text-[15px] hover:bg-white/90 transition-all duration-300 ease-smooth hover:translate-y-[-2px] hover:shadow-glow-white active:translate-y-0"
                   >
                     Continue →
@@ -493,14 +789,28 @@ export default function BookingPage() {
         {/* ─── STEP 3: YOUR INFO ──────────────────────────────── */}
         {step === 'info' && (
           <div className="animate-fade-up animate-fade-up-delay-2">
-            <button onClick={() => setStep('date')} className="text-sm text-white/30 hover:text-white/60 transition mb-6 flex items-center gap-2">
-              ← Back to date
+            <button onClick={() => { resetVehicle(); setStep('vehicle') }} className="text-sm text-white/30 hover:text-white/60 transition mb-6 flex items-center gap-2">
+              ← Back
             </button>
 
-            <h2 className="font-display text-2xl mb-2">Your Details</h2>
-            <p className="text-white/35 text-sm mb-8">
-              {selectedService?.name} · {selectedDate?.dayName} {selectedDate?.month} {selectedDate?.dayNum} at {selectedSlot}
+            <h2 className="font-display text-2xl mb-2">Where should we reach you?</h2>
+            <p className="text-white/35 text-sm mb-6">
+              Next you&apos;ll pick your time. We&apos;ll only use this to contact you about your appointment.
             </p>
+
+            <div className="mb-6 flex items-center justify-between gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+              <div className="flex items-center gap-3 min-w-0">
+                {vBrand?.logo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={vBrand.logo} alt="" className="h-6 w-6 object-contain shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-wide text-white/30">Your vehicle</div>
+                  <div className="text-sm text-white/80 truncate">{vehicle}</div>
+                </div>
+              </div>
+              <button onClick={() => { resetVehicle(); setStep('vehicle') }} className="text-xs text-white/40 hover:text-white underline underline-offset-4 shrink-0">Change</button>
+            </div>
 
             <div className="flex flex-col gap-4">
               <div>
@@ -522,17 +832,6 @@ export default function BookingPage() {
                   placeholder="(832) 555-1234"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-white/40 tracking-wide uppercase mb-2 block">Vehicle (Year Make Model) *</label>
-                <input
-                  type="text"
-                  className="booking-input"
-                  placeholder="2024 Toyota Camry"
-                  value={vehicle}
-                  onChange={e => setVehicle(e.target.value)}
                 />
               </div>
 
@@ -581,11 +880,11 @@ export default function BookingPage() {
             )}
 
             <button
-              onClick={() => { setError(''); setStep('confirm'); }}
-              disabled={!name || !phone || !vehicle}
+              onClick={submitInfo}
+              disabled={!name || !phone}
               className="btn-shine w-full mt-8 py-4 rounded-2xl bg-white text-[#0a0a0a] font-semibold text-[15px] hover:bg-white/90 transition-all duration-300 ease-smooth hover:translate-y-[-2px] hover:shadow-glow-white active:translate-y-0 disabled:bg-white/10 disabled:text-white/30 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
             >
-              Review Booking →
+              Continue →
             </button>
           </div>
         )}
@@ -593,8 +892,8 @@ export default function BookingPage() {
         {/* ─── STEP 4: CONFIRM ────────────────────────────────── */}
         {step === 'confirm' && (
           <div className="animate-fade-up animate-fade-up-delay-2">
-            <button onClick={() => setStep('info')} className="text-sm text-white/30 hover:text-white/60 transition mb-6 flex items-center gap-2">
-              ← Back to details
+            <button onClick={() => setStep('date')} className="text-sm text-white/30 hover:text-white/60 transition mb-6 flex items-center gap-2">
+              ← Back
             </button>
 
             <h2 className="font-display text-2xl mb-6">Confirm Your Appointment</h2>
@@ -714,7 +1013,7 @@ export default function BookingPage() {
             </div>
 
             <div className="text-sm text-white/25 mt-4">
-              Questions? Text us at <a href={`tel:${PHONE_TEL}`} className="text-white/50 hover:text-white transition">{PHONE_DISPLAY}</a>
+              Questions? <a href={`sms:${TEXT_TEL}?&body=${encodeURIComponent('Hi! I just reserved my spot on your website.')}`} className="text-white/50 hover:text-white transition">Text us at {TEXT_DISPLAY}</a>
             </div>
           </div>
         )}

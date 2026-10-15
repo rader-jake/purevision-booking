@@ -6,6 +6,9 @@ import Image from 'next/image'
 const API = 'https://purevision-backend-production.up.railway.app'
 const PHONE_DISPLAY = '(832) 512-3301'
 const PHONE_TEL = '+18325123301'
+// Number that replies to texts (Blooio line) — used for the tap-to-text link
+const TEXT_DISPLAY = '(832) 741-0931'
+const TEXT_TEL = '+18327410931'
 const GOOGLE_REVIEWS_URL = 'https://www.google.com/maps/place/PureVision+Tint/@30.0112867,-95.8206073,17z/data=!3m1!4b1!4m6!3m5!1s0x8640bf5c19b5ade3:0xe489391c99bff018!8m2!3d30.0112867!4d-95.8206073!16s%2Fg%2F11x2x2lqzf'
 const GOOGLE_RATING = 5.0
 const GOOGLE_REVIEW_COUNT = 127
@@ -32,6 +35,7 @@ interface Special {
   tag?: string
   daysAvailable?: number[]   // 0=Sun..6=Sat; omitted = every day
   availabilityNote?: string  // date-step subtitle override
+  hidden?: boolean           // not shown as a card; still bookable via a link (e.g. while a single-offer ad runs)
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -110,6 +114,7 @@ export default function BookingPage() {
       tag: 'Tuesdays Only',
       daysAvailable: [2],
       availabilityNote: 'Tuesdays only · 9AM–5PM',
+      hidden: true,
     },
   ]
 
@@ -227,6 +232,8 @@ export default function BookingPage() {
   }
 
   const selectedService = services.find(s => s.id === service)
+  const visibleServices = services.filter(s => !s.hidden)
+  const hiddenServices = services.filter(s => s.hidden)
   const availableDates = selectedService?.daysAvailable
     ? dates.filter(d => selectedService.daysAvailable!.includes(d.dow))
     : dates
@@ -334,11 +341,11 @@ export default function BookingPage() {
         {/* ─── STEP 1: SERVICE ────────────────────────────────── */}
         {step === 'service' && (
           <div className="animate-fade-up animate-fade-up-delay-2">
-            <h2 className="font-display text-2xl mb-2">{services.length > 1 ? 'Choose Your Special' : "This Month's Special"}</h2>
-            <p className="text-white/35 text-sm mb-8">{services.length > 1 ? 'Pick the one that fits your ride.' : 'Includes lifetime warranty and machine-cut precision film.'}</p>
+            <h2 className="font-display text-2xl mb-2">{visibleServices.length > 1 ? 'Choose Your Special' : "This Month's Special"}</h2>
+            <p className="text-white/35 text-sm mb-8">{visibleServices.length > 1 ? 'Pick the one that fits your ride.' : 'Includes lifetime warranty and machine-cut precision film.'}</p>
 
             <div className="flex flex-col gap-3">
-              {services.map(s => (
+              {visibleServices.map(s => (
                 <button
                   key={s.id}
                   onClick={() => { setService(s.id); setStep('date'); }}
@@ -370,6 +377,25 @@ export default function BookingPage() {
             <div className="mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
               <span className="text-white/50 font-medium">Add-ons available:</span> Ceramic windshield $185 · Sunroof single $80 dual $160 — mention these when you arrive.
             </div>
+
+            {/* Wait/drop-off — answered up front so it isn't a reason to hesitate */}
+            <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
+              <span className="text-white/50 font-medium">Wait or drop off:</span> relax in our WiFi waiting room, or drop your car and go — most jobs are done in 1–2 hours.
+            </div>
+
+            {hiddenServices.length > 0 && (
+              <div className="mt-5 text-center text-sm text-white/30">
+                {hiddenServices.map(h => (
+                  <button
+                    key={h.id}
+                    onClick={() => { setService(h.id); setStep('date') }}
+                    className="underline underline-offset-4 decoration-white/20 hover:text-white/60 transition-colors"
+                  >
+                    Looking for {h.name}?
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -545,7 +571,7 @@ export default function BookingPage() {
 
               {existingTint === 'yes' && (
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-sm text-white/40 animate-fade-up">
-                  ✓ Tint removal is <span className="text-white/70 font-medium">included FREE</span> with {services.length > 1 ? 'any of our specials' : 'this special'}.
+                  ✓ Tint removal is <span className="text-white/70 font-medium">included FREE</span> with {visibleServices.length > 1 ? 'any of our specials' : 'this special'}.
                 </div>
               )}
             </div>
@@ -703,6 +729,9 @@ export default function BookingPage() {
               <span className="flex items-center gap-1.5"><span className="text-accent/50">✓</span> Machine-cut precision</span>
               <span className="flex items-center gap-1.5"><span className="text-accent/50">✓</span> 5+ years experience</span>
               <span className="flex items-center gap-1.5"><span className="text-accent/50">✓</span> Free tint removal</span>
+            </div>
+            <div className="text-center mt-6 text-sm text-white/30">
+              Questions? <a href={`sms:${TEXT_TEL}?&body=${encodeURIComponent('Hi! I have a question about window tint.')}`} className="text-white/60 underline underline-offset-4 decoration-white/20 hover:text-white transition-colors">Text us at {TEXT_DISPLAY}</a>
             </div>
             <div className="text-center mt-6 text-[11px] text-white/15">
               © {new Date().getFullYear()} Pure Vision Tints · Hockley, TX

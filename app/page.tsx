@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import WorkCarousel from './WorkCarousel'
 
 const API = 'https://purevision-backend-production.up.railway.app'
 const PHONE_DISPLAY = '(832) 512-3301'
@@ -13,9 +14,16 @@ const GOOGLE_REVIEWS_URL = 'https://www.google.com/maps/place/PureVision+Tint/@3
 const GOOGLE_REVIEW_COUNT = 125
 
 const WORK_PHOTOS = [
-  { src: '/work/cybertruck.webp', caption: 'Tesla Cybertruck', position: 'object-center' },
-  { src: '/work/model3.webp', caption: 'Tesla Model 3', position: 'object-[35%_50%]' },
-  { src: '/work/raptor.webp', caption: 'Ford Raptor', position: 'object-center' },
+  { src: '/work/cybertruck.jpg', caption: 'Tesla Cybertruck' },
+  { src: '/work/civic.jpg', caption: 'Honda Civic' },
+  { src: '/work/f150-raptor.jpg', caption: 'Ford F-150 Raptor' },
+  { src: '/work/model3.jpg', caption: 'Tesla Model 3' },
+  { src: '/work/bronco.jpg', caption: 'Ford Bronco' },
+  { src: '/work/range-rover-sport.jpg', caption: 'Range Rover Sport' },
+  { src: '/work/camaro.jpg', caption: 'Chevy Camaro' },
+  { src: '/work/tacoma.jpg', caption: 'Toyota Tacoma' },
+  { src: '/work/sierra-hd.jpg', caption: 'GMC Sierra HD' },
+  { src: '/work/model-y.jpg', caption: 'Tesla Model Y' },
 ]
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -629,23 +637,8 @@ export default function BookingPage() {
 
               {/* Recent work */}
               <div className="mt-10">
-                <h3 className="text-xs font-medium text-white/40 tracking-wide uppercase mb-3">Recent work from our shop</h3>
-                <div className="flex gap-3 overflow-x-auto snap-x scroll-pl-5 -mx-5 px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {WORK_PHOTOS.map(w => (
-                    <figure key={w.src} className="shrink-0 snap-start w-[62%] sm:w-[44%] md:w-[31%]">
-                      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.02]">
-                        <Image
-                          src={w.src}
-                          alt={w.caption}
-                          fill
-                          sizes="(max-width: 640px) 62vw, 220px"
-                          className={`object-cover ${w.position}`}
-                        />
-                      </div>
-                      <figcaption className="mt-2 text-xs text-white/35">{w.caption}</figcaption>
-                    </figure>
-                  ))}
-                </div>
+                <h3 className="text-xs font-medium text-white/40 tracking-wide uppercase mb-4 text-center">Recent work from our shop</h3>
+                <WorkCarousel photos={WORK_PHOTOS} />
               </div>
               </div>
             )}

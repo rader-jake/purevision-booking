@@ -9,8 +9,8 @@ const API = 'https://purevision-backend-production.up.railway.app'
 const PHONE_DISPLAY = '(832) 512-3301'
 const PHONE_TEL = '+18325123301'
 // Number that replies to texts (Blooio line) — used for the tap-to-text link
-const TEXT_DISPLAY = '(832) 741-0931'
-const TEXT_TEL = '+18327410931'
+const TEXT_DISPLAY = '(346) 597-9950'
+const TEXT_TEL = '+13465979950'
 const GOOGLE_REVIEWS_URL = 'https://www.google.com/maps/place/PureVision+Tint/@30.0112867,-95.8206073,17z/data=!3m1!4b1!4m6!3m5!1s0x8640bf5c19b5ade3:0xe489391c99bff018!8m2!3d30.0112867!4d-95.8206073!16s%2Fg%2F11x2x2lqzf'
 const GOOGLE_REVIEW_COUNT = 125
 

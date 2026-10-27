@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import WorkCarousel from './WorkCarousel'
 
 const API = 'https://purevision-backend-production.up.railway.app'
@@ -788,7 +789,7 @@ export default function BookingPage() {
 
             <h2 className="font-display text-2xl mb-2">Where should we reach you?</h2>
             <p className="text-white/35 text-sm mb-6">
-              Next you&apos;ll pick your time. We&apos;ll only use this to contact you about your appointment.
+              Next you&apos;ll pick your time. We&apos;ll only use this to contact you about your appointment — see our <Link href="/terms" className="underline underline-offset-4 decoration-white/20 hover:text-white/60 transition-colors">Terms</Link> and <Link href="/privacy-policy" className="underline underline-offset-4 decoration-white/20 hover:text-white/60 transition-colors">Privacy Policy</Link>.
             </p>
 
             <div className="mb-6 flex items-center justify-between gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
@@ -1024,7 +1025,9 @@ export default function BookingPage() {
               Questions? <a href={`sms:${TEXT_TEL}?&body=${encodeURIComponent('Hi! I have a question about window tint.')}`} className="text-white/60 underline underline-offset-4 decoration-white/20 hover:text-white transition-colors">Text us at {TEXT_DISPLAY}</a> — we usually reply in under a minute
             </div>
             <div className="text-center mt-6 text-[11px] text-white/15">
-              © {new Date().getFullYear()} Pure Vision Tints · Hockley, TX
+              © {new Date().getFullYear()} Pure Vision Tints · Hockley, TX ·{' '}
+              <Link href="/terms" className="hover:text-white/40 transition-colors">Terms</Link> ·{' '}
+              <Link href="/privacy-policy" className="hover:text-white/40 transition-colors">Privacy Policy</Link>
             </div>
           </div>
         )}

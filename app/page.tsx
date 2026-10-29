@@ -71,11 +71,23 @@ interface DateOption {
   isToday: boolean
 }
 
+interface Addon {
+  id: string
+  name: string
+  amount: number
+  desc: string
+  duration?: string
+}
+
 interface Special {
   id: string
   name: string
   price: string
-  original: string
+  amount: number
+  original?: string
+  duration?: string          // shown as "Takes about …"
+  linkText?: string          // wording for the small link when the special is hidden
+  lineLabel?: string         // wording on the itemized receipt (defaults to name)
   desc: string
   details: string
   tag?: string
@@ -83,6 +95,12 @@ interface Special {
   availabilityNote?: string  // date-step subtitle override
   hidden?: boolean           // not shown as a card; still bookable via a link (e.g. while a single-offer ad runs)
 }
+
+// Optional extras on top of any special. They don't change the 2-hour appointment slot.
+const ADDONS: Addon[] = [
+  { id: 'windshield', name: 'Full front windshield', amount: 185, duration: '45 min', desc: 'Ceramic film across the entire front windshield' },
+  { id: 'visor', name: 'Visor Strip', amount: 40, desc: 'Sun strip across the top of the windshield' },
+]
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function getCookie(name: string): string | undefined {
@@ -118,6 +136,36 @@ function getNext14Days(): DateOption[] {
   return days
 }
 
+// Itemized price breakdown: each item, total, the $20 deposit, and what's left after service
+function Receipt({ lines, total, deposit, owed }: { lines: { label: string; amount: number }[]; total: number; deposit: number; owed: number }) {
+  return (
+    <div>
+      <div className="flex flex-col gap-2.5">
+        {lines.map(l => (
+          <div key={l.label} className="flex items-baseline gap-4">
+            <span className="font-display text-xl w-[68px] shrink-0">${l.amount}</span>
+            <span className="text-sm text-white/65">{l.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 pt-4 border-t border-white/[0.08] flex flex-col gap-2.5">
+        <div className="flex items-baseline gap-4">
+          <span className="font-display text-2xl w-[68px] shrink-0">${total}</span>
+          <span className="text-sm font-semibold tracking-wide text-white/80">TOTAL</span>
+        </div>
+        <div className="flex items-baseline gap-4">
+          <span className="font-display text-lg w-[68px] shrink-0 text-white/50">−${deposit}</span>
+          <span className="text-sm text-white/40">Deposit (paid now)</span>
+        </div>
+        <div className="flex items-baseline gap-4 mt-1 p-3 -mx-3 rounded-xl bg-accent/[0.08] border border-accent/25">
+          <span className="font-display text-2xl w-[68px] shrink-0 text-accent-light">${owed}</span>
+          <span className="text-sm font-medium text-white/80">Owed after service</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function BookingPage() {
   const [step, setStep] = useState<Step>('vehicle')
@@ -133,6 +181,7 @@ export default function BookingPage() {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [vehicle, setVehicle] = useState('')
+  const [addonIds, setAddonIds] = useState<string[]>([])
   const [vBrand, setVBrand] = useState<Brand | null>(null)
   const [vModel, setVModel] = useState('')
   const [pickedBubble, setPickedBubble] = useState('')
@@ -152,16 +201,32 @@ export default function BookingPage() {
       id: 'ceramic',
       name: 'Ceramic Special',
       price: '$299',
+      amount: 299,
       original: '$600',
+      duration: '1 hr 30 min',
       desc: 'All side windows + rear',
       details: 'HITEK Ceramic Black · Blocks 78% IR heat & 99% UV · Lifetime warranty',
       tag: 'Fall Special',
     },
     {
+      id: 'front-windows',
+      name: 'Driver & Passenger',
+      lineLabel: 'Driver & Passenger Windows',
+      price: '$160',
+      amount: 160,
+      duration: '45 min',
+      desc: 'Both front side windows (driver + passenger)',
+      details: 'HITEK Ceramic Black · Blocks 78% IR heat & 99% UV · Lifetime warranty',
+      linkText: 'Only need the front windows?',
+      hidden: true,
+    },
+    {
       id: 'tesla-tuesday',
       name: 'Tesla Tuesday',
       price: '$600',
+      amount: 600,
       original: '$749',
+      linkText: 'Driving a Tesla?',
       desc: 'All side windows + full rear + full panoramic roof (windshield not included)',
       details: 'HITEK Ceramic Black · Blocks 78% IR heat & 99% UV · Lifetime warranty',
       tag: 'Tuesdays Only',
@@ -337,7 +402,8 @@ export default function BookingPage() {
           lead_name: name,
           lead_phone: formattedPhone,
           lead_vehicle: vehicle,
-          lead_special: selectedService?.name,
+          lead_special: specialLabel,
+          quote_total: totalAmount,
           appointment_time: timeStr,
           // Lets the backend attribute the paid deposit to the ad click (Meta Conversions API)
           fbp: getCookie('_fbp'),
@@ -369,6 +435,18 @@ export default function BookingPage() {
     : dates
 
   const activeOffer = selectedService ?? visibleServices[0]
+  const chosenAddons = ADDONS.filter(a => addonIds.includes(a.id))
+  const totalAmount = (selectedService?.amount ?? 0) + chosenAddons.reduce((sum, a) => sum + a.amount, 0)
+  // One readable string for the lead + calendar event, e.g. "Ceramic Special + Visor strip (total $339)"
+  const DEPOSIT = 20
+  const owedAfter = Math.max(0, totalAmount - DEPOSIT)
+  const receiptLines = [
+    ...(selectedService ? [{ label: selectedService.lineLabel ?? selectedService.name, amount: selectedService.amount }] : []),
+    ...chosenAddons.map(a => ({ label: a.name, amount: a.amount })),
+  ]
+  const specialLabel = selectedService
+    ? [selectedService.name, ...chosenAddons.map(a => a.name)].join(' + ') + (chosenAddons.length ? ` (total $${totalAmount})` : '')
+    : undefined
   const vStage: 'brand' | 'model' | 'year' = !vBrand ? 'brand' : !vModel ? 'model' : 'year'
   const thisYear = new Date().getFullYear()
   const years = Array.from({ length: 16 }, (_, i) => String(thisYear + 1 - i))
@@ -482,10 +560,11 @@ export default function BookingPage() {
                   {activeOffer.tag && <div className="text-[10px] font-semibold tracking-wider uppercase text-accent-light/80 mb-0.5">{activeOffer.tag}</div>}
                   <div className="text-sm text-white/70">{activeOffer.name}</div>
                   <div className="text-xs text-white/35">{activeOffer.desc}</div>
+                  {activeOffer.duration && <div className="text-xs text-accent-light/70 mt-1">Takes about {activeOffer.duration}</div>}
                 </div>
                 <div className="text-right shrink-0">
                   <span className="font-display text-2xl">{activeOffer.price}</span>
-                  <span className="text-xs line-through text-white/30 ml-1.5">{activeOffer.original}</span>
+                  {activeOffer.original && <span className="text-xs line-through text-white/30 ml-1.5">{activeOffer.original}</span>}
                 </div>
               </div>
             )}
@@ -604,7 +683,7 @@ export default function BookingPage() {
               <div className="mt-10">
             {/* Add-ons note */}
               <div className="mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-sm text-white/30">
-                <span className="text-white/50 font-medium">Add-ons available:</span> Ceramic windshield $185 · Sunroof single $80 dual $160 — mention these when you arrive.
+                <span className="text-white/50 font-medium">Add a windshield or visor strip</span> when you review your booking. Sunroof: single $80 · dual $160 — mention it when you arrive.
               </div>
 
               {/* Wait/drop-off — answered up front so it isn't a reason to hesitate */}
@@ -613,7 +692,7 @@ export default function BookingPage() {
               </div>
 
               {hiddenServices.length > 0 && (
-                <div className="mt-5 text-center text-sm text-white/30">
+                <div className="mt-5 flex flex-col items-center gap-2 text-sm text-white/30">
                   {hiddenServices.map(h => (
                     service === h.id ? (
                       <button
@@ -629,7 +708,7 @@ export default function BookingPage() {
                         onClick={() => { setService(h.id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                         className="underline underline-offset-4 decoration-white/20 hover:text-white/60 transition-colors"
                       >
-                        Looking for {h.name}?
+                        {h.linkText ?? 'Looking for'} {h.name}{h.price ? ` — ${h.price}` : ''}{h.linkText ? '' : '?'}
                       </button>
                     )
                   ))}
@@ -676,7 +755,7 @@ export default function BookingPage() {
                   )}
                   <div className="flex items-baseline gap-3 mb-2">
                     <span className="font-display text-3xl tracking-tight">{s.price}</span>
-                    <span className={`text-sm line-through ${service === s.id ? 'text-[#0a0a0a]/30' : 'text-white/20'}`}>{s.original}</span>
+                    {s.original && <span className={`text-sm line-through ${service === s.id ? 'text-[#0a0a0a]/30' : 'text-white/20'}`}>{s.original}</span>}
                   </div>
                   <div className="text-base font-medium mb-1">{s.name}</div>
                   <div className={`text-sm ${service === s.id ? 'text-[#0a0a0a]/60' : 'text-white/35'}`}>{s.desc}</div>
@@ -900,6 +979,37 @@ export default function BookingPage() {
                   <span className="text-white/50">{selectedService?.price}</span>
                 </div>
                 <div className="text-sm text-white/30 mt-1">{selectedService?.desc}</div>
+                {selectedService?.duration && <div className="text-xs text-accent-light/70 mt-1.5">Takes about {selectedService.duration}</div>}
+              </div>
+
+              <div className="p-6 border-b border-white/[0.06]">
+                <div className="text-xs font-medium text-white/30 tracking-wide uppercase mb-3">Add to your appointment</div>
+                <div className="flex flex-col gap-2">
+                  {ADDONS.map(a => {
+                    const on = addonIds.includes(a.id)
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={on}
+                        onClick={() => setAddonIds(on ? addonIds.filter(x => x !== a.id) : [...addonIds, a.id])}
+                        className={`flex items-center gap-3 text-left p-3.5 rounded-xl border transition-all duration-300 ease-smooth ${on ? 'border-accent/50 bg-accent/[0.08]' : 'border-white/[0.08] bg-white/[0.02] hover:border-white/20'}`}
+                      >
+                        <span className={`shrink-0 h-5 w-5 rounded-md border flex items-center justify-center text-[12px] transition-colors ${on ? 'bg-accent border-accent text-[#0a0a0a]' : 'border-white/20 text-transparent'}`}>✓</span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm text-white/80">{a.name}</span>
+                          <span className="block text-xs text-white/30">{a.desc}{a.duration ? ` · ${a.duration}` : ''}</span>
+                        </span>
+                        <span className="text-sm text-white/70 shrink-0">+${a.amount}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="mt-5 pt-5 border-t border-white/[0.06]">
+                  <Receipt lines={receiptLines} total={totalAmount} deposit={DEPOSIT} owed={owedAfter} />
+                </div>
+                <div className="text-xs text-white/30 mt-4">Your appointment is a 2-hour window.</div>
               </div>
 
               <div className="p-6 border-b border-white/[0.06]">
@@ -973,8 +1083,9 @@ export default function BookingPage() {
 
             <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6 max-w-sm mx-auto mb-6 text-left">
               <div className="text-xs font-medium text-white/30 tracking-wide uppercase mb-3">Appointment</div>
-              <div className="text-sm text-white/70 mb-1">{selectedService?.name} · {vehicle}</div>
-              <div className="text-sm text-white/40">{selectedDate?.dayName} {selectedDate?.month} {selectedDate?.dayNum} at {selectedSlot}</div>
+              <div className="text-sm text-white/70 mb-1">{vehicle}</div>
+              <div className="text-sm text-white/40 mb-5">{selectedDate?.dayName} {selectedDate?.month} {selectedDate?.dayNum} at {selectedSlot}</div>
+              <Receipt lines={receiptLines} total={totalAmount} deposit={DEPOSIT} owed={owedAfter} />
             </div>
 
             {depositUrl && (

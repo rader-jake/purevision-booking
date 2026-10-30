@@ -77,7 +77,12 @@ interface Addon {
   amount: number
   desc: string
   duration?: string
+  popular?: boolean
+  // Only offered for certain vehicles (and not when the chosen special already includes it)
+  when?: (ctx: { vehicle: string; serviceId: string }) => boolean
 }
+
+const isTesla = (v: string, model: RegExp) => /tesla/i.test(v) && model.test(v)
 
 interface Special {
   id: string
@@ -100,6 +105,16 @@ interface Special {
 const ADDONS: Addon[] = [
   { id: 'windshield', name: 'Full front windshield', amount: 185, duration: '45 min', desc: 'Ceramic film across the entire front windshield' },
   { id: 'visor', name: 'Visor Strip', amount: 40, desc: 'Sun strip across the top of the windshield' },
+  {
+    id: 'model-y-sunroof', name: 'Full Tesla Model Y sunroof', amount: 300, popular: true,
+    desc: 'Full glass roof — the most popular Model Y add-on',
+    when: ({ vehicle, serviceId }) => serviceId !== 'tesla-tuesday' && isTesla(vehicle, /model\s*y/i),
+  },
+  {
+    id: 'model-3-rear', name: 'Full Model 3 rear window', amount: 150,
+    desc: 'Covers the full rear glass on the Model 3',
+    when: ({ vehicle, serviceId }) => serviceId !== 'tesla-tuesday' && isTesla(vehicle, /model\s*3/i),
+  },
 ]
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -182,6 +197,7 @@ export default function BookingPage() {
   const [phone, setPhone] = useState('')
   const [vehicle, setVehicle] = useState('')
   const [addonIds, setAddonIds] = useState<string[]>([])
+  const [smsConsent, setSmsConsent] = useState(false)
   const [vBrand, setVBrand] = useState<Brand | null>(null)
   const [vModel, setVModel] = useState('')
   const [pickedBubble, setPickedBubble] = useState('')
@@ -404,6 +420,7 @@ export default function BookingPage() {
           lead_vehicle: vehicle,
           lead_special: specialLabel,
           quote_total: totalAmount,
+          sms_consent: smsConsent,
           appointment_time: timeStr,
           // Lets the backend attribute the paid deposit to the ad click (Meta Conversions API)
           fbp: getCookie('_fbp'),
@@ -435,7 +452,12 @@ export default function BookingPage() {
     : dates
 
   const activeOffer = selectedService ?? visibleServices[0]
-  const chosenAddons = ADDONS.filter(a => addonIds.includes(a.id))
+  // Add-ons offered for this vehicle/special (popular ones first)
+  const availableAddons = ADDONS
+    .filter(a => !a.when || a.when({ vehicle, serviceId: service }))
+    .sort((a, b) => Number(!!b.popular) - Number(!!a.popular))
+  const vehicleAddons = availableAddons.filter(a => a.when)
+  const chosenAddons = availableAddons.filter(a => addonIds.includes(a.id))
   const totalAmount = (selectedService?.amount ?? 0) + chosenAddons.reduce((sum, a) => sum + a.amount, 0)
   // One readable string for the lead + calendar event, e.g. "Ceramic Special + Visor strip (total $339)"
   const DEPOSIT = 20
@@ -884,6 +906,13 @@ export default function BookingPage() {
               </div>
               <button onClick={() => { resetVehicle(); setStep('vehicle') }} className="text-xs text-white/40 hover:text-white underline underline-offset-4 shrink-0">Change</button>
             </div>
+            {vehicleAddons.length > 0 && (
+              <div className="-mt-3 mb-6 px-4 py-3 rounded-xl bg-accent/[0.06] border border-accent/20 text-xs text-white/55 leading-relaxed">
+                {vehicleAddons.map(a => (
+                  <div key={a.id}><span className="text-accent-light">{a.name} (+${a.amount})</span> is available for your vehicle. You can add it when you review your booking.</div>
+                ))}
+              </div>
+            )}
 
             <div className="flex flex-col gap-4">
               <div>
@@ -946,6 +975,24 @@ export default function BookingPage() {
               )}
             </div>
 
+            {/* Optional text-message consent — unchecked by default, never required to book */}
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={smsConsent}
+              onClick={() => setSmsConsent(!smsConsent)}
+              className={`mt-6 w-full flex items-start gap-3 text-left p-4 rounded-xl border transition-all duration-300 ease-smooth ${smsConsent ? 'border-accent/50 bg-accent/[0.08]' : 'border-white/[0.08] bg-white/[0.02] hover:border-white/20'}`}
+            >
+              <span className={`mt-0.5 shrink-0 h-5 w-5 rounded-md border flex items-center justify-center text-[12px] transition-colors ${smsConsent ? 'bg-accent border-accent text-[#0a0a0a]' : 'border-white/20 text-transparent'}`}>✓</span>
+              <span className="text-xs leading-relaxed text-white/45">
+                <span className="block text-sm text-white/75 mb-1">Text me about my appointment (optional)</span>
+                I agree to receive texts from Pure Vision Tints about my inquiry and appointment, including from an automated assistant. Message frequency varies, up to 30 per inquiry. Message and data rates may apply. Reply STOP to opt out, HELP for help. Not required to book.
+              </span>
+            </button>
+            <p className="mt-2 px-1 text-[11px] text-white/25">
+              See our <Link href="/terms" className="underline underline-offset-2 hover:text-white/50">Terms</Link> and <Link href="/privacy-policy" className="underline underline-offset-2 hover:text-white/50">Privacy Policy</Link>.
+            </p>
+
             {error && (
               <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
                 {error}
@@ -985,7 +1032,7 @@ export default function BookingPage() {
               <div className="p-6 border-b border-white/[0.06]">
                 <div className="text-xs font-medium text-white/30 tracking-wide uppercase mb-3">Add to your appointment</div>
                 <div className="flex flex-col gap-2">
-                  {ADDONS.map(a => {
+                  {availableAddons.map(a => {
                     const on = addonIds.includes(a.id)
                     return (
                       <button
@@ -998,7 +1045,10 @@ export default function BookingPage() {
                       >
                         <span className={`shrink-0 h-5 w-5 rounded-md border flex items-center justify-center text-[12px] transition-colors ${on ? 'bg-accent border-accent text-[#0a0a0a]' : 'border-white/20 text-transparent'}`}>✓</span>
                         <span className="flex-1 min-w-0">
-                          <span className="block text-sm text-white/80">{a.name}</span>
+                          <span className="block text-sm text-white/80">
+                            {a.name}
+                            {a.popular && <span className="ml-2 align-middle text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-accent/15 text-accent-light">Popular</span>}
+                          </span>
                           <span className="block text-xs text-white/30">{a.desc}{a.duration ? ` · ${a.duration}` : ''}</span>
                         </span>
                         <span className="text-sm text-white/70 shrink-0">+${a.amount}</span>
